@@ -40,7 +40,7 @@ window.computeUsersStats = (users, progress, courses) => {
         } 
       }
     }
-    let stats = { // Arma la nueva propiedad para el objeto Users
+    let stats = { // Arma un objeto para Users
       parts: countPart,
       percent: Math.round((((totalExerciseOk * 100) / (totalExercise === 0 ? 1 : totalExercise)) + ((totalReadOk * 100) / (totalRead === 0 ? 1 : totalRead)) + ((totalQuizOk * 100) / (totalQuiz === 0 ? 1 : totalQuiz))) / 3),
       exercises: {
@@ -61,11 +61,9 @@ window.computeUsersStats = (users, progress, courses) => {
         scoreAvg: Math.round(scoreSumQuiz / (totalQuizOk === 0 ? 1 : totalQuizOk))
       },
     };
-    element['stats'] = stats;// Agrega la nueva propiedad al Users
+    element['stats'] = stats;// Agrega la nueva propiedad al Users, si no existiera no se podrían realizar cálculos.
   });
-  console.log(users);
-  console.log(progress);
-  console.log(courses);
+  
   // Ejecuta las funciones que se despliegan en el html.
   lectureProgress(users);
   generalInformation(users);
@@ -82,59 +80,59 @@ window.getCohorts = (cohorts) => { // Arma el contenido del desplegable de cohor
 };
 
 window.filterUsers = (users, search) => { // Función de filtro de usuario
-  return users.filter(function(studentFilter) {
-    return studentFilter.name.toLowerCase().indexOf(search.toLowerCase()) > -1;
+  return users.filter(function(studentFilter) { // Retorna los usuarios filtrados a respuesta de filter user.
+    return studentFilter.name.toLowerCase().indexOf(search.toLowerCase()) > -1;// Evalua, -1 no lo encuentra. Envia indice de donde encuentra el search.
   });
 };
 
 window.sortUsers = (users, orderBy, orderDirection) => {
-  let sortedUsers = users;
+  let sortedUsers;
   if (orderBy === 'name') {
     if (orderDirection === 'ASC') {
-      sorted = users.sort((first, second) => first.name.localeCompare(second.name));
+      sortedUsers = users.sort((first, second) => first.name.localeCompare(second.name));
     }
     if (orderDirection === 'DESC') {
-      sorted = users.sort((first, second) => first.name.localeCompare(second.name)).reverse();
+      sortedUsers = users.sort((first, second) => first.name.localeCompare(second.name)).reverse();
     }
   };
   if (orderBy === 'percent') {
     if (orderDirection === 'ASC') {
-      sorted = users.sort((first, second) => first.stats.percent - second.stats.percent);
+      sortedUsers = users.sort((first, second) => first.stats.percent - second.stats.percent);
     }
     if (orderDirection === 'DESC') {
-      sorted = users.sort((first, second) => first.stats.percent - second.stats.percent).reverse();
+      sortedUsers = users.sort((first, second) => first.stats.percent - second.stats.percent).reverse();
     }
   };
   if (orderBy === 'exercisesPercent') {
     if (orderDirection === 'ASC') {
-      sorted = users.sort((first, second) => first.stats.exercises.percent - second.stats.exercises.percent);
+      sortedUsers = users.sort((first, second) => first.stats.exercises.percent - second.stats.exercises.percent);
     }
     if (orderDirection === 'DESC') {
-      sorted = users.sort((first, second) => first.stats.exercises.percent - second.stats.exercises.percent).reverse();
+      sortedUsers = users.sort((first, second) => first.stats.exercises.percent - second.stats.exercises.percent).reverse();
     }
   };
   if (orderBy === 'quizzesPercent') {
     if (orderDirection === 'ASC') {
-      sorted = users.sort((first, second) => first.stats.quizzes.percent - second.stats.quizzes.percent);
+      sortedUsers = users.sort((first, second) => first.stats.quizzes.percent - second.stats.quizzes.percent);
     }
     if (orderDirection === 'DESC') {
-      sorted = users.sort((first, second) => first.stats.quizzes.percent - second.stats.quizzes.percent).reverse();
+      sortedUsers = users.sort((first, second) => first.stats.quizzes.percent - second.stats.quizzes.percent).reverse();
     }
   };
   if (orderBy === 'quizzesScorePercent') {
     if (orderDirection === 'ASC') {
-      sorted = users.sort((first, second) => first.stats.quizzes.scoreAvg - second.stats.quizzes.scoreAvg);
+      sortedUsers = users.sort((first, second) => first.stats.quizzes.scoreAvg - second.stats.quizzes.scoreAvg);
     }
     if (orderDirection === 'DESC') {
-      sorted = users.sort((first, second) => first.stats.quizzes.scoreAvg - second.stats.quizzes.scoreAvg).reverse();
+      sortedUsers = users.sort((first, second) => first.stats.quizzes.scoreAvg - second.stats.quizzes.scoreAvg).reverse();
     }
   };
   if (orderBy === 'readsPercent') {
     if (orderDirection === 'ASC') {
-      sorted = users.sort((first, second) => first.stats.reads.percent - second.stats.reads.percent);
+      sortedUsers = users.sort((first, second) => first.stats.reads.percent - second.stats.reads.percent);
     }
     if (orderDirection === 'DESC') {
-      sorted = users.sort((first, second) => first.stats.reads.percent - second.stats.reads.percent).reverse();
+      sortedUsers = users.sort((first, second) => first.stats.reads.percent - second.stats.reads.percent).reverse();
     }
   };
   return sortedUsers;

@@ -2,47 +2,6 @@ let gUsers;
 let gProgress;
 let gCourses;
 let gCohorts;
-
-window.onload = function start() {
-  
-  getApiData('scl-2018-05-bc-core-am');
-  
-};
-function getApiData(cohort) {
-  hideContent();
-  titleCohort.innerText = 'cargando...';
-  Promise.all([ // Llama la info de API en paralelo(Todas a la vez)
-    fetch('https://api.laboratoria.la/cohorts/' + cohort + '/users'),
-    fetch('https://api.laboratoria.la/cohorts/' + cohort + '/progress'),
-    fetch('https://api.laboratoria.la/cohorts/' + cohort + '/courses'),
-    fetch('https://api.laboratoria.la/cohorts/')
-  ]).then((responses)=>{ // Se cumplen promesas
-    return Promise.all(responses.map((response => response.json()))); 
-  }).then((responseJsons)=>{ // Transforma respuestas en objetos Json
-    const users = responseJsons[0].filter(element => element.role === 'student');
-    const progress = responseJsons[1];
-    const courses = responseJsons[2];
-    const cohorts = responseJsons[3];
-    //Actualiza las variables globales.
-    gUsers = users;
-    gProgress = progress;
-    gCourses = courses;
-    gCohorts = cohorts;
-
-    if (users && progress && courses) {
-      computeUsersStats(users, progress, courses);// Llama al computeUsersStats con datos obtenidos de la API
-      getCohorts(cohorts);
-    }
-    titleCohort.innerText = cohort;
-    console.log(filterUsers(users, 'lor')); // Debería devolver solo un elemento en el array.
-    console.log(filterUsers(users, 'ana')); // Debería devolver tres elemento en el array.
-    console.log(sortUsers(users, 'quizzesPercent', 'DESC'));
-
-  }).catch(
-    (error)=>{ // Si una llamada falla, se ejecuta error.
-      console.log('Error al llamar API.' + error);
-    });
-}
 // Constantes de tablas en html.
 const lecTable = document.getElementById('infoLectureTable');
 const infTable = document.getElementById('generalInfBody');
@@ -69,23 +28,61 @@ const pEjercicios = document.getElementById('pEjercicios');
 // Constante de input.
 const inpStudent = document.getElementById('userFinder');
 
-btnInformation.addEventListener('click', () => {
-  generalInformation(gUsers);
+window.onload = function start() { // Evento onload (Cuando termina de cargar todo el contenido de la pág) ejecuta función Start
+  
+  getApiData('scl-2018-05-bc-core-am'); // Llama por de defecto para que el usuario vea datos y no este en blanco.
+  
+};
+
+function getApiData(cohort) { // Función que obtiene datos desde la API.
+  hideContent(); // Oculta todo antes de mostrar algo.
+  titleCohort.innerText = 'cargando...'; // Reemplaza contenido de titulo por cargando... 
+  Promise.all([ // Llama la info de API en paralelo(Todas a la vez)
+    fetch('https://api.laboratoria.la/cohorts/' + cohort + '/users'),
+    fetch('https://api.laboratoria.la/cohorts/' + cohort + '/progress'),
+    fetch('https://api.laboratoria.la/cohorts/' + cohort + '/courses'),
+    fetch('https://api.laboratoria.la/cohorts/')
+  ]).then((responses)=>{ // Se cumplen promesas
+    return Promise.all(responses.map((response => response.json()))); // Convertir todo de string a objeto.
+  }).then((responseJsons)=>{ // Cuando termina la promesa entrega los objetos Json (array)
+    const users = responseJsons[0].filter(element => element.role === 'student');// Se filtra el resultado de la API users a solo los que tengan "role" student
+    const progress = responseJsons[1];// Toma el dato sin filtro desde API.
+    const courses = responseJsons[2];
+    const cohorts = responseJsons[3];
+    gUsers = users; // La const entrega a la variable global los datos obtenidos de la API.
+    gProgress = progress;
+    gCourses = courses;
+    gCohorts = cohorts;
+
+    if (users && progress && courses) { // Si... los parametros tienen algo, entra al bloque.
+      computeUsersStats(users, progress, courses);// Llama al computeUsersStats con datos obtenidos de la API
+      getCohorts(cohorts);
+    }
+    titleCohort.innerText = cohort;// Una ve que los datos son cargados, cambia el titulo al nombre del cohort seleccionado.
+
+  }).catch(
+    (error)=>{ // Si una llamada falla, se ejecuta error.
+      console.log('Error al llamar API.' + error);
+    });
+}
+
+btnInformation.addEventListener('click', () => { // Asigna el evento click al botón información. 
+  generalInformation(gUsers); 
   resumenCohort(gUsers);
 });
-// Se llama al momento de hacer click en el botón de Información General.
-function generalInformation(users) {
-  changeTitle('INFORMACIÓN GENERAL');
-  hideContent();
-  document.getElementById('generalInfBody').innerHTML = '';
-  const renderUsers = users.forEach(element => {
+
+function generalInformation(users) { 
+  changeTitle('INFORMACIÓN GENERAL'); // Ejecuta la función para cambiar titulo principal.
+  hideContent(); // Oculta todas las tablas de contenido.
+  document.getElementById('generalInfBody').innerHTML = ''; // Limpia el contenido del body.
+  const renderUsers = users.forEach(element => { 
     // Los promedios se obtienen de aquí.
     let averageStudent = Math.round((element.stats.reads.percent + element.stats.quizzes.percent + element.stats.exercises.percent) / 3);
     let names = `<tr><td>${element.name}</td><td>${averageStudent}%</td><td>${element.stats.reads.percent}%</td><td>${element.stats.quizzes.percent}%</td><td>${element.stats.exercises.percent}%</td></tr>`;
-    return infTable.innerHTML += names; 
+    return infTable.innerHTML += names; // Agrega el html creado en name a la tabla infTable en HTML.
   });
   
-  infPage.style.display = 'block';
+  infPage.style.display = 'block'; // Una vez que recorre todos los usuarios muestra la Información General.
 }
 btnResumenAlumna.addEventListener('click', () => {
   if (inpStudent.value !== '') {
@@ -105,24 +102,24 @@ btnResumenAlumna.addEventListener('click', () => {
     processCohortData(options);
     resumenStudentBody(gUsers, inpStudent.value);
   } else {
-    resStdTable.innerHTML = '';
+    resStdTable.innerHTML = ''; // Limpia la tabla.
     let names = `<tr colspan="5"><td>Tiene que ingresar algún filtro para buscar alumnas</td></tr>`;
-    resStdTable.innerHTML += names;
-    hideContent();
-    resStdPage.style.display = 'block';
+    resStdTable.innerHTML += names; // Agrega el mensaje de name al HTML en la tabla.
+    hideContent(); // Oculta el contenido del body.
+    resStdPage.style.display = 'block'; // Muestra contenido del body.
   }
 });
 function resumenStudentBody(users, search) {
-  changeTitle('RESUMEN ALUMNA');
-  hideContent();
-  resStdTable.innerHTML = '';
-  filterUsers(users, search).forEach(element => {
+  changeTitle('RESUMEN ALUMNA'); // Cambia titulo principal.
+  hideContent(); // Oculta contenido.
+  resStdTable.innerHTML = ''; // Limpia contenido de la tabla.
+  filterUsers(users, search).forEach(element => { // Devuelve array de usuarios filtrados y el foreach los recorre.
     // Los promedios se obtienen de aquí.
     let averageStudent = Math.round((element.stats.reads.percent + element.stats.quizzes.percent + element.stats.exercises.percent) / 3);
     let names = `<tr><td>${element.name}</td><td>${averageStudent}%</td><td>${element.stats.reads.percent}%</td><td>${element.stats.quizzes.percent}%</td><td>${element.stats.exercises.percent}%</td></tr>`;
     return resStdTable.innerHTML += names; 
   });
-  resStdPage.style.display = 'block';
+  resStdPage.style.display = 'block'; // Muestra, el bloque completo del resumen de alumna.
 }
 // RESUMEN COHORT
 function resumenCohort(users) {
@@ -158,11 +155,11 @@ function resumenCohort(users) {
       optimo[2]++;
     }
   });
-  summaryCohorts(sinAvance, noOptimo, optimo, users.length);
+  summaryCohorts(sinAvance, noOptimo, optimo, users.length);// User.length es para saber la cantidad de alumnas que hay.
 };
 
 // Porcentajes totales.
-function summaryCohorts(sinAvance, noOptimo, optimo, userCount) {
+function summaryCohorts(sinAvance, noOptimo, optimo, userCount) { // Arma resumen de Cohort.
   const progressRow = document.getElementById('progressRow');
   const notOptimalRow = document.getElementById('notOptimalRow');
   const optimalRow = document.getElementById('optimalRow');
@@ -214,17 +211,17 @@ function ejerciciosAverage(users) {
   hideContent();// Esconde todos los contenidos.
   pEjerciciosProgressPage.style.display = 'block';// Muestra el contenido información general.
 };
-// Cambia el titulo del dashboard.
-const changeTitle = titleText => {
+
+const changeTitle = (titleText) => { // Cambia el titulo del dashboard.
   document.getElementById('titleDashboard').innerText = titleText;
 };
 
 function orderNameChange() {// Ordena la grilla general por nombre de estudiante.
-  const selectedIndex = document.getElementById('comboBoxOrder').selectedIndex;
-  const selectedItem = document.getElementById('comboBoxOrder').options[selectedIndex];
-  sortUsers(gUsers, 'name', selectedItem.value);
-  generalInformation(gUsers);
-  resumenCohort(gUsers);
+  const selectedIndex = document.getElementById('comboBoxOrder').selectedIndex;// Obtiene indice seleccionado.
+  const selectedItem = document.getElementById('comboBoxOrder').options[selectedIndex];// Obtiene elemento seleccionado en base a indice.
+  sortUsers(gUsers, 'name', selectedItem.value);// Ejecuta function con parametros seleccionados.
+  generalInformation(gUsers); // Genera InfoGeneral con parametro gUser.
+  resumenCohort(gUsers);// Genera resumenCohort con parametro gUser y lo guarda.
 }
 function orderAvgChange() {// Ordena la grilla general por promedio de estudiante.
   const selectedIndex = document.getElementById('comboBoxOrderAvg').selectedIndex;
@@ -236,7 +233,7 @@ function orderAvgChange() {// Ordena la grilla general por promedio de estudiant
 
 function categoryFilter() { //Filtra alumnas por niveles, óptimo, no óptimo, sin avance, Todos.
   const SelectedFilter = document.querySelector('input[name="optradio"]:checked').value;
-  switch (SelectedFilter){
+  switch (SelectedFilter) {
 	  case 'Todos':
 		  generalInformation(gUsers);
 	    break;	  
@@ -262,13 +259,13 @@ function categoryFilter() { //Filtra alumnas por niveles, óptimo, no óptimo, s
   }
 }
 
-function hideContent() {
+function hideContent() {// Oculta contenidos
   const bodyContentChild = document.getElementById('bodyContent').children;
   for (let i = 0;i < bodyContentChild.length;i++) {
-    bodyContentChild[i].style.display = 'none';
+    bodyContentChild[i].style.display = 'none';// Los oculta uno a uno.
   }   
 };
 
-function cohortsSelectChange(cohort) {
-  getApiData(cohort);
+function cohortsSelectChange(cohort) {// Ejecuta function con parametro cohort que obtiene de combo box.
+  getApiData(cohort);// Llama a API con el parametro entregado.
 }
